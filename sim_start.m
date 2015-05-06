@@ -19,6 +19,9 @@ position = [0; 0; 0]; % x, y, theta (in radians)
 
 defaultaction = [15; 0; 1]; % v, u, length of time (in seconds)
 
+target = [500;500];
+
+lastposition = [0;0];
 
 minposition=0;
 maxposition=0;
@@ -39,9 +42,15 @@ for kk=1:1000,
     p = cloudsamp(cloud,position(1),position(2),t);
     
     gpsposition = checkPosition(position);
-    action = behaviour(t, p, gpsposition);
+    orientation = angletopoint(lastposition,gpsposition);
+    
+    target = behaviour(t, p, gpsposition, orientation);
+    
+    action = navigation(t, lastposition, orientation, position, gpsposition, target);
     
     %%%%%%%%%%%%%%%%%%%%output%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % save old gps
+    lastposition = gpsposition;
     % apply any movement
     position = move(dt, position, action);
     
@@ -82,7 +91,7 @@ action = [];
 if p < 0.1
     action = logspiral(t, gpsposition);
 else
-    action = trackcloud(p, gpsposition);
+    action = trackedgecloud(p, gpsposition);
 end
 % if gpsposition(2) > 200
 %     actionqueue = [actionqueue [15; 90; 5]];
@@ -105,8 +114,8 @@ if isempty(action)
 end
 
 
-function action = trackcloud(p, gpsposition)
-% logarithmic spiral behaviour
+function action = trackedgecloud(p, gpsposition)
+% edge follow cloud behaviour
 
 if p > 1
     action = [20;-.01]
@@ -121,21 +130,45 @@ end
 function action = logspiral(t, gpsposition)
 % logarithmic spiral behaviour
 
-action = [10;.05 - log(t)*.01]
+action = [10;.05 - log(t)*.01];
 
 % if t>100
 %     action = [10;.05 - log(t)*.01 + .001]
 % end
 
 
+function action = navigation(t, lastposition, orientation, position, gpsposition, target)
+% abstract navigation
+action = [10;0.1];
+
+angletotarget = angletopoint(gpsposition,target);
+
+orientationtotarget = angletotarget - orientation;
+
+if orientationtotarget > 0.001
+    action(2) = 0.01*orientationtotarget;
+elseif orientationtotarget < -0.001
+    action(2) = -0.01*orientationtotarget;
+else
+    action(2) = 0;
+end
 
 
+
+
+function angle = angletopoint(p1,p2)
+% measures angle from a point to another point
+opposite = p2(2)-p1(2);
+adjacent = p2(1)-p1(1);
+%angle = atan(opposite/adjacent); %issues around 0 orientation
+angle = atan2(adjacent,opposite);
 
 function gpsposition = checkPosition(position)
 % simulate measurement of agent position from gps with error margin +/- 3m
 
 % position plus error
-gpsposition = position(1:2) + randi([-3 3], 2, 1);
+%gpsposition = position(1:2) + randi([-3 3], 2, 1); % equal distribution
+gpsposition = position(1:2) + normrnd(0,3/2.5, 2, 1); % normal distribution
 
 
 function moved = move(dt, position, action)
