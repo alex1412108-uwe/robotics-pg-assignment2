@@ -76,7 +76,7 @@ for kk=1:1000,
     maxmin = maxposition - minposition;
     
     % clear the axes for fresh plotting
-    %cla
+    cla
     
     % put information in the title
     title(sprintf('t=%.1f secs pos=(%.1f, %.1f)  Concentration=%.2f',t, position(1),position(2),p))
@@ -99,44 +99,86 @@ function action = behaviour(t, p, gpsposition, lastposition, orientation, positi
 
 action = [];
 
-if p > 0.5
-    cloudfound = 1;
-end
-    
-if cloudfound == 0
-    action = circlesearch(t, gpsposition);
-    %action = navigation(t, lastposition, orientation, position, gpsposition, target);
-end
+obstacles = checkobstacles(gpsposition);
+batterylow = checkbattery(t);
 
-if cloudfound == 1
-    if p<1
-        action = diveintocloud(p, gpsposition, lastmeasurement);
+if obstacles == 1
+    action = [10;-0.1];
+else
+    if batterylow == 1
+        action = [10;-0.1];
     else
-        action = trackedgecloud(p, gpsposition);
+        if p > 0.5
+            cloudfound = 1;
+        end
+
+        if cloudfound == 0
+            action = circlesearch(t, gpsposition);
+            %action = navigation(t, lastposition, orientation, position, gpsposition, target);
+        end
+
+        if cloudfound == 1
+            if p<1
+                action = diveintocloud(p, gpsposition, lastmeasurement);
+            else
+                action = trackedgecloud(p, gpsposition);
+            end
+        end
+
+
+
+
+        % if gpsposition(2) > 200
+        %     actionqueue = [actionqueue [15; 90; 5]];
+        % end
+        % 
+        % if gpsposition(2) < - 200
+        %     actionqueue = [actionqueue [15; 90; 5]];
+        % end
+
+        % if mod(t,8) == 0
+        %     actionqueue = [actionqueue [15; 90; 5]];
+        % end
     end
 end
 
 
 
 
-% if gpsposition(2) > 200
-%     actionqueue = [actionqueue [15; 90; 5]];
-% end
-% 
-% if gpsposition(2) < - 200
-%     actionqueue = [actionqueue [15; 90; 5]];
-% end
-
-% if mod(t,8) == 0
-%     actionqueue = [actionqueue [15; 90; 5]];
-% end
-
-
-
-
-
 if isempty(action)
     action = [10; 0.1];
+end
+
+function obstacles = checkobstacles(gpsposition)
+% avoid obstacles behaviour
+x = gpsposition(1);
+y = gpsposition(2);
+
+%avoid edges of operation
+if x > 900
+    obstacles = 1;
+elseif x < -900
+    obstacles = 1;
+end
+    
+if y > 900
+    obstacles = 1;
+elseif y < -900
+    obstacles = 1;
+else
+    obstacles = 0;
+    
+end
+
+function batterylow = checkbattery(t)
+% battery low behaviour
+
+
+if t > 3600
+    batterylow = 1;
+else
+    batterylow = 0;
+    
 end
 
 function action = diveintocloud(p, gpsposition, lastmeasurement)
