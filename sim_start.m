@@ -12,7 +12,7 @@ load 'cloud2.mat'
 
 % time and time step
 t = 0;
-dt = 4;%3.6;
+dt = 3.6;%3.6;
 
 % initiate drone
 position = [0; 0; 0]; % x, y, theta (in radians)
@@ -46,12 +46,14 @@ for kk=1:1000,
     position = move(dt, position, actionqueue);
     
     if position(1) > maxposition
-        maxposition = position(1)
+        maxposition = position(1);
     end
     
     if position(1) < minposition
-        minposition = position(1)
+        minposition = position(1);
     end
+    
+    maxmin = maxposition - minposition
     
     % clear the axes for fresh plotting
     cla
@@ -85,12 +87,12 @@ actionqueue = [];
 %     actionqueue = [actionqueue [15; 90; 5]];
 % end
 
-if mod(t,8) == 0
-    actionqueue = [actionqueue [15; 90; 5]];
-end
+% if mod(t,8) == 0
+%     actionqueue = [actionqueue [15; 90; 5]];
+% end
 
 if isempty(actionqueue)
-    actionqueue = [15; 0; 5];
+    actionqueue = [10; 0.005; 5];
 end
 
 
@@ -113,15 +115,16 @@ if v<10
 elseif v>20
     v = 20;
 end
+% restricts turn rate to uav limits
+if u < -0.1 * dt
+    u = -0.1 * dt;
+elseif u > 0.1 * dt
+    u = 0.1 * dt;
+end
 
 positiondot = [v * sin(theta) * dt; v * cos(theta) * dt; v * u * dt];
 
-% restricts turn rate to uav limit
-if positiondot(3)<-6 * dt
-    positiondot(3) = -6 * dt;
-elseif positiondot(3)>6 * dt
-    positiondot(3) = 6 * dt;
-end
+
 
 moved = position + positiondot;
 
