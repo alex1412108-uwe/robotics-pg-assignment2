@@ -159,8 +159,10 @@ if t<5
     action = [20;0];
 elseif t<50
     action = [10;-0.007];
-elseif t<400
+elseif t<300
     action = [10;-0.003];
+else
+    action = [10;-0.1];
 end
 %target = [t.*cos(t);t.*sin(t);];
 
