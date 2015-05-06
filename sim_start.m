@@ -14,6 +14,8 @@ load 'cloud2.mat'
 t = 0;
 dt = 1;%3.6;
 
+agentnumber = 2;
+
 % initiate drone
 position = [0; 0; 0]; % x, y, theta (in radians)
 
@@ -33,6 +35,10 @@ maxposition=0;
 % open new figure window
 figure
 hold on % so each plot doesn't wipte the predecessor
+
+% for i = drange(0:agentnumber)
+%     position(i) = [position;position]
+% end
 
 % main simulation loop
 for kk=1:1000,
@@ -159,7 +165,11 @@ if t<5
     action = [20;0];
 elseif t<50
     action = [10;-0.007];
+elseif t<250
+    action = [10;-0.003];
 elseif t<300
+    action = [10;-0.007];
+elseif t<500
     action = [10;-0.003];
 else
     action = [10;-0.1];
