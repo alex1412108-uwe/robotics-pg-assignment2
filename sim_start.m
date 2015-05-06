@@ -23,6 +23,10 @@ target = [500;500];
 
 lastposition = [0;0];
 
+cloudfound = 0;
+
+lastmeasurement = 0;
+
 minposition=0;
 maxposition=0;
 
@@ -44,13 +48,14 @@ for kk=1:1000,
     gpsposition = checkPosition(position);
     orientation = angletopoint(lastposition,gpsposition);
     
-    action = behaviour(t, p, gpsposition, orientation);
+    action = behaviour(t, p, gpsposition, lastposition, orientation, position, target, cloudfound, lastmeasurement);
     
     %action = navigation(t, lastposition, orientation, position, gpsposition, target);
     
     %%%%%%%%%%%%%%%%%%%%output%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % save old gps
+    % save old data
     lastposition = gpsposition;
+    lastmeasurement = p;
     % apply any movement
     position = move(dt, position, action);
     
@@ -65,7 +70,7 @@ for kk=1:1000,
     maxmin = maxposition - minposition;
     
     % clear the axes for fresh plotting
-    cla
+    %cla
     
     % put information in the title
     title(sprintf('t=%.1f secs pos=(%.1f, %.1f)  Concentration=%.2f',t, position(1),position(2),p))
@@ -83,16 +88,31 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%behaviours%%%%%%%%%%%%%%%%%%%%%%%
 
-function action = behaviour(t, p, gpsposition)
+function action = behaviour(t, p, gpsposition, lastposition, orientation, position, target, cloudfound, lastmeasurement)
 % simulate behaviour of uav
 
 action = [];
 
-if p < 0.1
-    action = navigation(t, lastposition, orientation, position, gpsposition, target);
-else
-    action = trackedgecloud(p, gpsposition);
+if p > 0.5
+    cloudfound = 1;
 end
+    
+if cloudfound == 0
+    action = circlesearch(t, gpsposition);
+    %action = navigation(t, lastposition, orientation, position, gpsposition, target);
+end
+
+if cloudfound == 1
+    if p<1
+        action = diveintocloud(p, gpsposition, lastmeasurement);
+    else
+        action = trackedgecloud(p, gpsposition);
+    end
+end
+
+
+
+
 % if gpsposition(2) > 200
 %     actionqueue = [actionqueue [15; 90; 5]];
 % end
@@ -113,19 +133,36 @@ if isempty(action)
     action = [10; 0.1];
 end
 
+function action = diveintocloud(p, gpsposition, lastmeasurement)
+% dive deeper into cloud behaviour
+
+if p > lastmeasurement
+    action = [10;0];
+else
+    action = [10;0.1];
+end
 
 function action = trackedgecloud(p, gpsposition)
 % edge follow cloud behaviour
+x = gpsposition(1);
+y = gpsposition(2);
 
 if p > 1
-    action = [20;-.01]
+    action = [10;0.03];
 else
-    action = [20;.01]
+    action = [10;-0.03];
 end
 
-
-
-
+function action = circlesearch(t, gpsposition)
+% circle based searching behaviour
+if t<5
+    action = [20;0];
+elseif t<50
+    action = [10;-0.007];
+elseif t<400
+    action = [10;-0.003];
+end
+%target = [t.*cos(t);t.*sin(t);];
 
 function action = logspiral(t, gpsposition)
 % logarithmic spiral behaviour
