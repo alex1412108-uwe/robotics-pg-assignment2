@@ -44,9 +44,9 @@ for kk=1:1000,
     gpsposition = checkPosition(position);
     orientation = angletopoint(lastposition,gpsposition);
     
-    target = behaviour(t, p, gpsposition, orientation);
+    action = behaviour(t, p, gpsposition, orientation);
     
-    action = navigation(t, lastposition, orientation, position, gpsposition, target);
+    %action = navigation(t, lastposition, orientation, position, gpsposition, target);
     
     %%%%%%%%%%%%%%%%%%%%output%%%%%%%%%%%%%%%%%%%%%%%%%%
     % save old gps
@@ -81,7 +81,7 @@ for kk=1:1000,
     
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%behaviours%%%%%%%%%%%%%%%%%%%%%%%
 
 function action = behaviour(t, p, gpsposition)
 % simulate behaviour of uav
@@ -89,7 +89,7 @@ function action = behaviour(t, p, gpsposition)
 action = [];
 
 if p < 0.1
-    action = logspiral(t, gpsposition);
+    action = navigation(t, lastposition, orientation, position, gpsposition, target);
 else
     action = trackedgecloud(p, gpsposition);
 end
@@ -136,6 +136,7 @@ action = [10;.05 - log(t)*.01];
 %     action = [10;.05 - log(t)*.01 + .001]
 % end
 
+%%%%%%%%%%%%%%%%%%%%%%%navigation%%%%%%%%%%%%%%%%%%%%%%
 
 function action = navigation(t, lastposition, orientation, position, gpsposition, target)
 % abstract navigation
@@ -145,6 +146,11 @@ angletotarget = angletopoint(gpsposition,target);
 
 orientationtotarget = angletotarget - orientation;
 
+a = target(2)-gpsposition(2);
+b = target(1)-gpsposition(1);
+
+distancetotarget = sqrt((a^2)+(b^2));
+
 if orientationtotarget > 0.001
     action(2) = 0.01*orientationtotarget;
 elseif orientationtotarget < -0.001
@@ -153,23 +159,11 @@ else
     action(2) = 0;
 end
 
-
-
-
-function angle = angletopoint(p1,p2)
-% measures angle from a point to another point
-opposite = p2(2)-p1(2);
-adjacent = p2(1)-p1(1);
-%angle = atan(opposite/adjacent); %issues around 0 orientation
-angle = atan2(adjacent,opposite);
-
-function gpsposition = checkPosition(position)
-% simulate measurement of agent position from gps with error margin +/- 3m
-
-% position plus error
-%gpsposition = position(1:2) + randi([-3 3], 2, 1); % equal distribution
-gpsposition = position(1:2) + normrnd(0,3/2.5, 2, 1); % normal distribution
-
+if distancetotarget > 100
+    action(1) = 20;
+else
+    action(1) = 10;
+end
 
 function moved = move(dt, position, action)
 % simulate movement and restrictions
@@ -196,3 +190,16 @@ positiondot = [v * sin(theta) * dt; v * cos(theta) * dt; v * u * dt];
 
 moved = position + positiondot;
 
+function gpsposition = checkPosition(position)
+% simulate measurement of agent position from gps with error margin +/- 3m
+
+% position plus error
+%gpsposition = position(1:2) + randi([-3 3], 2, 1); % equal distribution
+gpsposition = position(1:2) + normrnd(0,3/2.5, 2, 1); % normal distribution
+
+function angle = angletopoint(p1,p2)
+% measures angle from a point to another point
+opposite = p2(2)-p1(2);
+adjacent = p2(1)-p1(1);
+%angle = atan(opposite/adjacent); %issues around 0 orientation
+angle = atan2(adjacent,opposite);
