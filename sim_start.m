@@ -12,7 +12,7 @@ load 'cloud2.mat'
 
 % time and time step
 t = 0;
-dt = 3.6;%3.6;
+dt = 1;%3.6;
 
 % initiate drone
 position = [0; 0; 0]; % x, y, theta (in radians)
@@ -92,7 +92,7 @@ actionqueue = [];
 % end
 
 if isempty(actionqueue)
-    actionqueue = [10; 0.005; 5];
+    actionqueue = [10; 0.1; 5];
 end
 
 
@@ -110,16 +110,16 @@ u = actionqueue(2);
 theta = position(3);
 
 % restricts speed to uav limits
-if v<10
+if v < 10
     v = 10;
-elseif v>20
+elseif v > 20
     v = 20;
 end
 % restricts turn rate to uav limits
-if u < -0.1 * dt
-    u = -0.1 * dt;
-elseif u > 0.1 * dt
-    u = 0.1 * dt;
+if u < -0.1
+    u = -0.1;
+elseif u > 0.1
+    u = 0.1;
 end
 
 positiondot = [v * sin(theta) * dt; v * cos(theta) * dt; v * u * dt];
