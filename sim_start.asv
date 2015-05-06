@@ -12,16 +12,13 @@ load 'cloud2.mat'
 
 % time and time step
 t = 0;
-dt = 4;%3.6;
+dt = 2;%3.6;
 
 % initiate drone
 position = [0; 0; 0]; % x, y, theta (in radians)
 
 defaultaction = [15; 0; 1]; % v, u, length of time (in seconds)
 
-
-minposition=0;
-maxposition=0;
 
 % open new figure window
 figure
@@ -39,19 +36,11 @@ for kk=1:1000,
     p = cloudsamp(cloud,position(1),position(2),t);
     
     gpsposition = checkPosition(position);
-    actionqueue = behaviour(t, gpsposition);
+    actionqueue = behaviour(gpsposition);
     
     %%%%%%%%%%%%%%%%%%%%output%%%%%%%%%%%%%%%%%%%%%%%%%%
     % apply any movement
-    position = move(dt, position, actionqueue);
-    
-    if position(1) > maxposition
-        maxposition = position(1)
-    end
-    
-    if position(1) < minposition
-        minposition = position(1)
-    end
+    position = move(dt, t, position, actionqueue);
     
     % clear the axes for fresh plotting
     cla
@@ -72,7 +61,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function actionqueue = behaviour(t, gpsposition)
+function actionqueue = behaviour(gpsposition)
 % simulate behaviour of uav
 
 actionqueue = [];
@@ -85,7 +74,11 @@ actionqueue = [];
 %     actionqueue = [actionqueue [15; 90; 5]];
 % end
 
-if mod(t,8) == 0
+if t > 8
+    actionqueue = [actionqueue [15; 90; 5]];
+end
+
+if t > - 200
     actionqueue = [actionqueue [15; 90; 5]];
 end
 
