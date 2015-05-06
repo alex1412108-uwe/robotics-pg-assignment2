@@ -39,11 +39,11 @@ for kk=1:1000,
     p = cloudsamp(cloud,position(1),position(2),t);
     
     gpsposition = checkPosition(position);
-    actionqueue = behaviour(t, gpsposition);
+    action = behaviour(t, p, gpsposition);
     
     %%%%%%%%%%%%%%%%%%%%output%%%%%%%%%%%%%%%%%%%%%%%%%%
     % apply any movement
-    position = move(dt, position, actionqueue);
+    position = move(dt, position, action);
     
     if position(1) > maxposition
         maxposition = position(1);
@@ -53,7 +53,7 @@ for kk=1:1000,
         minposition = position(1);
     end
     
-    maxmin = maxposition - minposition
+    maxmin = maxposition - minposition;
     
     % clear the axes for fresh plotting
     cla
@@ -74,11 +74,16 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function actionqueue = behaviour(t, gpsposition)
+function action = behaviour(t, p, gpsposition)
 % simulate behaviour of uav
 
-actionqueue = [];
+action = [];
 
+if p < 0.1
+    action = logspiral(t, gpsposition);
+else
+    action = trackcloud(p, gpsposition);
+end
 % if gpsposition(2) > 200
 %     actionqueue = [actionqueue [15; 90; 5]];
 % end
@@ -91,9 +96,39 @@ actionqueue = [];
 %     actionqueue = [actionqueue [15; 90; 5]];
 % end
 
-if isempty(actionqueue)
-    actionqueue = [10; 0.1; 5];
+
+
+
+
+if isempty(action)
+    action = [10; 0.1];
 end
+
+
+function action = trackcloud(p, gpsposition)
+% logarithmic spiral behaviour
+
+if p > 1
+    action = [20;-.01]
+else
+    action = [20;.01]
+end
+
+
+
+
+
+function action = logspiral(t, gpsposition)
+% logarithmic spiral behaviour
+
+action = [10;.05 - log(t)*.01]
+
+% if t>100
+%     action = [10;.05 - log(t)*.01 + .001]
+% end
+
+
+
 
 
 function gpsposition = checkPosition(position)
@@ -103,10 +138,10 @@ function gpsposition = checkPosition(position)
 gpsposition = position(1:2) + randi([-3 3], 2, 1);
 
 
-function moved = move(dt, position, actionqueue)
+function moved = move(dt, position, action)
 % simulate movement and restrictions
-v = actionqueue(1);
-u = actionqueue(2);
+v = action(1);
+u = action(2);
 theta = position(3);
 
 % restricts speed to uav limits
