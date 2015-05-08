@@ -12,7 +12,7 @@ load 'cloud2.mat'
 
 % time and time step
 t = 0;
-dt = 1;%3.6;
+dt = 2;%3.6;
 
 agentnumber = 2;
 
@@ -76,7 +76,7 @@ for kk=1:1000,
     maxmin = maxposition - minposition;
     
     % clear the axes for fresh plotting
-    cla
+    %cla
     
     % put information in the title
     title(sprintf('t=%.1f secs pos=(%.1f, %.1f)  Concentration=%.2f',t, position(1),position(2),p))
@@ -210,9 +210,9 @@ elseif t<50
 elseif t<250
     action = [10;-0.003];
 elseif t<300
-    action = [10;-0.007];
+    action = [10;-0.001];
 elseif t<500
-    action = [10;-0.003];
+    action = [10;-0.002];
 else
     action = [10;-0.1];
 end
